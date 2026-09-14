@@ -1,10 +1,5 @@
-// src/graphql/resolvers.js
-// Semua resolver membaca/menulis lewat pool yang sama dengan proyek lama,
-// jadi tetap terhubung ke database Neon yang sudah ada.
-
 const pool = require("../db/pool");
 
-// Helper: baris "items" dari DB (snake_case) -> bentuk GraphQL (camelCase)
 function mapItem(row) {
   if (!row) return null;
   return {
@@ -14,7 +9,7 @@ function mapItem(row) {
     price: row.price !== null ? Number(row.price) : 0,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
-    category_id: row.category_id, // dipakai internal oleh resolver Item.category
+    category_id: row.category_id,
   };
 }
 
@@ -26,6 +21,8 @@ function mapCategory(row) {
     description: row.description,
   };
 }
+
+let resolverCallCount = 0;
 
 const resolvers = {
   Query: {
@@ -47,7 +44,14 @@ const resolvers = {
     },
 
     categories: async () => {
+      // Reset counter di sini: Query.categories adalah ROOT resolver yang
+      // selalu dipanggil lebih dulu, jadi ini titik awal yang pas untuk
+      // mulai menghitung ulang dari 0 setiap kali ada query baru.
+      resolverCallCount = 0;
+      console.log("[N+1 counter] Query.categories dipanggil (root resolver) — counter direset ke 0");
+
       const { rows } = await pool.query("SELECT * FROM categories ORDER BY id ASC");
+      console.log(`[N+1 counter] Ditemukan ${rows.length} kategori (ini prediksi N)`);
       return rows.map(mapCategory);
     },
 
@@ -125,7 +129,6 @@ const resolvers = {
     },
   },
 
-  // Resolver relasi: Item -> Category (banyak-ke-satu)
   Item: {
     category: async (parent) => {
       if (!parent.category_id) return null;
@@ -137,9 +140,13 @@ const resolvers = {
     },
   },
 
-  // Resolver relasi: Category -> Items (satu-ke-banyak) => nested query
   Category: {
     items: async (parent) => {
+      resolverCallCount++;
+      console.log(
+        `[N+1 counter] Category.items dipanggil ke-${resolverCallCount}x (untuk category id=${parent.id}, name="${parent.name}")`
+      );
+
       const { rows } = await pool.query(
         "SELECT * FROM items WHERE category_id = $1 ORDER BY id ASC",
         [parent.id]
