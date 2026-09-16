@@ -23,6 +23,22 @@ const typeDefs = gql`
     items: [Item!]!
   }
 
+  "Payload untuk membuat item baru. categoryId boleh dikosongkan."
+  input CreateItemInput {
+    name: String!
+    description: String
+    price: Float
+    categoryId: ID
+  }
+
+  "Field yang dikirim saja akan diperbarui pada item yang sudah ada."
+  input UpdateItemInput {
+    name: String
+    description: String
+    price: Float
+    categoryId: ID
+  }
+
   type Query {
     "Ambil semua item (opsional filter berdasarkan kategori)"
     items(categoryId: ID): [Item!]!
@@ -33,20 +49,9 @@ const typeDefs = gql`
   }
 
   type Mutation {
-    createItem(
-      name: String!
-      description: String
-      price: Float
-      categoryId: ID
-    ): Item!
+    createItem(input: CreateItemInput!): Item!
 
-    updateItem(
-      id: ID!
-      name: String
-      description: String
-      price: Float
-      categoryId: ID
-    ): Item!
+    updateItem(id: ID!, input: UpdateItemInput!): Item!
 
     deleteItem(id: ID!): Boolean!
 

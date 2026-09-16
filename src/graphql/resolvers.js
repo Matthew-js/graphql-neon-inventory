@@ -62,7 +62,8 @@ const resolvers = {
   },
 
   Mutation: {
-    createItem: async (_parent, { name, description, price, categoryId }) => {
+    createItem: async (_parent, { input }) => {
+      const { name, description, price, categoryId } = input;
       const { rows } = await pool.query(
         `INSERT INTO items (name, description, price, category_id)
          VALUES ($1, $2, $3, $4) RETURNING *`,
@@ -71,7 +72,8 @@ const resolvers = {
       return mapItem(rows[0]);
     },
 
-    updateItem: async (_parent, { id, name, description, price, categoryId }) => {
+    updateItem: async (_parent, { id, input }) => {
+      const { name, description, price, categoryId } = input;
       const { rows } = await pool.query(
         `UPDATE items
            SET name = COALESCE($1, name),
