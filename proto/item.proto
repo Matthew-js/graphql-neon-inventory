@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package inventory;
+
+// Representasi entitas Item dari GraphQL API dan tabel items di Neon.
+message Item {
+  int32 id = 1;
+  string name = 2;
+  string description = 3;
+  float price = 4;
+  int32 category_id = 5;
+  string created_at = 6;
+  string updated_at = 7;
+}
+
+// Request unary untuk mengambil satu item berdasarkan ID.
+message GetItemRequest {
+  int32 id = 1;
+}
+
+// Response dipisahkan supaya kontrak dapat ditambah metadata di masa depan.
+message GetItemResponse {
+  Item item = 1;
+}
+
+service ItemService {
+  rpc GetItem(GetItemRequest) returns (GetItemResponse);
+}
